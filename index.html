@@ -1,0 +1,2039 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>
+        Cross Validation Based Model Evaluation
+    </title>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+
+    <style>
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+
+        body {
+
+            font-family:
+                Arial,
+                Helvetica,
+                sans-serif;
+
+            background: #f4f7fb;
+
+            color: #1f2937;
+
+            line-height: 1.6;
+
+        }
+
+
+        /* =========================
+           HEADER
+        ========================= */
+
+        header {
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #172554,
+                    #0f766e
+                );
+
+            color: white;
+
+            padding: 45px 20px;
+
+            text-align: center;
+
+        }
+
+
+        header h1 {
+
+            font-size: 36px;
+
+            margin-bottom: 10px;
+
+        }
+
+
+        header p {
+
+            font-size: 17px;
+
+            opacity: 0.9;
+
+        }
+
+
+        /* =========================
+           MAIN CONTAINER
+        ========================= */
+
+        .container {
+
+            width: 90%;
+
+            max-width: 1150px;
+
+            margin: auto;
+
+        }
+
+
+        /* =========================
+           CARD
+        ========================= */
+
+        .card {
+
+            background: white;
+
+            margin-top: 25px;
+
+            padding: 30px;
+
+            border-radius: 15px;
+
+            box-shadow:
+                0 5px 20px
+                rgba(0, 0, 0, 0.08);
+
+        }
+
+
+        .card h2 {
+
+            color: #172554;
+
+            margin-bottom: 20px;
+
+        }
+
+
+        .card h3 {
+
+            margin-top: 25px;
+
+            margin-bottom: 15px;
+
+        }
+
+
+        /* =========================
+           INTRODUCTION
+        ========================= */
+
+        .intro p {
+
+            margin-bottom: 10px;
+
+        }
+
+
+        /* =========================
+           FORM
+        ========================= */
+
+        .form-grid {
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(3, 1fr);
+
+            gap: 20px;
+
+        }
+
+
+        label {
+
+            display: block;
+
+            font-weight: bold;
+
+            margin-bottom: 8px;
+
+        }
+
+
+        select {
+
+            width: 100%;
+
+            padding: 12px;
+
+            border: 1px solid #d1d5db;
+
+            border-radius: 8px;
+
+            background: white;
+
+            font-size: 15px;
+
+        }
+
+
+        /* =========================
+           MODEL SELECTION
+        ========================= */
+
+        .models {
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(3, 1fr);
+
+            gap: 15px;
+
+            margin-bottom: 25px;
+
+        }
+
+
+        .model-box {
+
+            background: #f8fafc;
+
+            padding: 15px;
+
+            border-radius: 10px;
+
+            border: 1px solid #e5e7eb;
+
+            cursor: pointer;
+
+            transition: 0.2s;
+
+        }
+
+
+        .model-box:hover {
+
+            border-color: #0f766e;
+
+            background: #ecfdf5;
+
+        }
+
+
+        .model-box input {
+
+            margin-right: 8px;
+
+        }
+
+
+        /* =========================
+           BUTTON
+        ========================= */
+
+        button {
+
+            border: none;
+
+            background: #0f766e;
+
+            color: white;
+
+            padding: 14px 30px;
+
+            border-radius: 8px;
+
+            font-size: 16px;
+
+            font-weight: bold;
+
+            cursor: pointer;
+
+            transition: 0.2s;
+
+        }
+
+
+        button:hover {
+
+            background: #115e59;
+
+            transform: translateY(-1px);
+
+        }
+
+
+        /* =========================
+           LOADING
+        ========================= */
+
+        #loading {
+
+            display: none;
+
+            text-align: center;
+
+            padding: 30px;
+
+        }
+
+
+        .loader {
+
+            width: 45px;
+
+            height: 45px;
+
+            border: 5px solid #ddd;
+
+            border-top-color: #0f766e;
+
+            border-radius: 50%;
+
+            animation:
+                spin 1s linear infinite;
+
+            margin: auto;
+
+        }
+
+
+        @keyframes spin {
+
+            to {
+
+                transform:
+                    rotate(360deg);
+
+            }
+
+        }
+
+
+        /* =========================
+           HIDDEN
+        ========================= */
+
+        .hidden {
+
+            display: none;
+
+        }
+
+
+        /* =========================
+           INFORMATION
+        ========================= */
+
+        .info-box {
+
+            background: #eff6ff;
+
+            border-left:
+                5px solid #2563eb;
+
+            padding: 15px;
+
+            border-radius: 8px;
+
+            margin-bottom: 20px;
+
+        }
+
+
+        .info-box p {
+
+            margin: 4px 0;
+
+        }
+
+
+        /* =========================
+           TABLE
+        ========================= */
+
+        .table-container {
+
+            overflow-x: auto;
+
+        }
+
+
+        table {
+
+            width: 100%;
+
+            border-collapse: collapse;
+
+            margin-top: 15px;
+
+        }
+
+
+        th {
+
+            background: #172554;
+
+            color: white;
+
+            padding: 14px;
+
+            text-align: center;
+
+        }
+
+
+        td {
+
+            padding: 13px;
+
+            text-align: center;
+
+            border-bottom:
+                1px solid #e5e7eb;
+
+        }
+
+
+        tr:hover {
+
+            background: #f8fafc;
+
+        }
+
+
+        .best-model {
+
+            background: #dcfce7 !important;
+
+            font-weight: bold;
+
+        }
+
+
+        .best-badge {
+
+            display: inline-block;
+
+            background: #16a34a;
+
+            color: white;
+
+            padding: 3px 8px;
+
+            border-radius: 20px;
+
+            font-size: 11px;
+
+            margin-left: 5px;
+
+        }
+
+
+        /* =========================
+           CHART
+        ========================= */
+
+        .chart-container {
+
+            position: relative;
+
+            width: 100%;
+
+            height: 400px;
+
+        }
+
+
+        /* =========================
+           STEPS
+        ========================= */
+
+        .steps {
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(4, 1fr);
+
+            gap: 15px;
+
+        }
+
+
+        .step {
+
+            background: #f8fafc;
+
+            padding: 20px;
+
+            border-radius: 10px;
+
+            text-align: center;
+
+            border:
+                1px solid #e5e7eb;
+
+        }
+
+
+        .step-number {
+
+            display: flex;
+
+            justify-content: center;
+
+            align-items: center;
+
+            width: 42px;
+
+            height: 42px;
+
+            background: #0f766e;
+
+            color: white;
+
+            border-radius: 50%;
+
+            margin:
+                0 auto 12px;
+
+            font-weight: bold;
+
+            font-size: 18px;
+
+        }
+
+
+        /* =========================
+           METRICS
+        ========================= */
+
+        .metric-grid {
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(4, 1fr);
+
+            gap: 20px;
+
+        }
+
+
+        .metric-card {
+
+            background: #f8fafc;
+
+            border:
+                1px solid #e5e7eb;
+
+            padding: 20px;
+
+            border-radius: 10px;
+
+        }
+
+
+        .metric-card h3 {
+
+            margin-top: 0;
+
+            color: #0f766e;
+
+        }
+
+
+        .formula {
+
+            display: block;
+
+            margin-top: 15px;
+
+            font-weight: bold;
+
+            font-size: 14px;
+
+            background: white;
+
+            padding: 8px;
+
+            border-radius: 5px;
+
+        }
+
+
+        /* =========================
+           STATUS
+        ========================= */
+
+        .status {
+
+            padding: 15px;
+
+            margin-top: 20px;
+
+            border-radius: 8px;
+
+            background: #ecfdf5;
+
+            border-left:
+                5px solid #16a34a;
+
+        }
+
+
+        /* =========================
+           FOOTER
+        ========================= */
+
+        footer {
+
+            margin-top: 40px;
+
+            padding: 25px;
+
+            text-align: center;
+
+            background: #172554;
+
+            color: white;
+
+        }
+
+
+        /* =========================
+           RESPONSIVE
+        ========================= */
+
+        @media (max-width: 850px) {
+
+            .form-grid {
+
+                grid-template-columns: 1fr;
+
+            }
+
+
+            .models {
+
+                grid-template-columns: 1fr;
+
+            }
+
+
+            .steps {
+
+                grid-template-columns:
+                    1fr 1fr;
+
+            }
+
+
+            .metric-grid {
+
+                grid-template-columns:
+                    1fr 1fr;
+
+            }
+
+        }
+
+
+        @media (max-width: 550px) {
+
+            header h1 {
+
+                font-size: 25px;
+
+            }
+
+
+            .steps {
+
+                grid-template-columns: 1fr;
+
+            }
+
+
+            .metric-grid {
+
+                grid-template-columns: 1fr;
+
+            }
+
+
+            .card {
+
+                padding: 20px;
+
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<!-- =====================================================
+     HEADER
+===================================================== -->
+
+<header>
+
+    <div class="container">
+
+        <h1>
+            Cross Validation Based Model Evaluation
+        </h1>
+
+        <p>
+            Compare Machine Learning Models using
+            Cross-Validation and Performance Metrics
+        </p>
+
+    </div>
+
+</header>
+
+
+<main class="container">
+
+
+<!-- =====================================================
+     INTRODUCTION
+===================================================== -->
+
+<section class="card intro">
+
+    <h2>
+        About the Project
+    </h2>
+
+    <p>
+
+        Cross-validation is a machine learning
+        model evaluation technique used to estimate
+        how well a model performs on unseen data.
+
+    </p>
+
+    <p>
+
+        In this project, different machine learning
+        algorithms are compared using K-Fold
+        Cross-Validation.
+
+    </p>
+
+    <p>
+
+        The models are evaluated using Accuracy,
+        Precision, Recall and F1-Score.
+
+    </p>
+
+</section>
+
+
+<!-- =====================================================
+     SETTINGS
+===================================================== -->
+
+<section class="card">
+
+    <h2>
+        Model Evaluation Settings
+    </h2>
+
+
+    <div class="form-grid">
+
+
+        <!-- Dataset -->
+
+        <div>
+
+            <label>
+                Select Dataset
+            </label>
+
+            <select id="dataset">
+
+                <option value="iris">
+                    Iris Dataset
+                </option>
+
+                <option value="wine">
+                    Wine Dataset
+                </option>
+
+                <option value="breast">
+                    Breast Cancer Dataset
+                </option>
+
+            </select>
+
+        </div>
+
+
+        <!-- Folds -->
+
+        <div>
+
+            <label>
+                Cross Validation
+            </label>
+
+            <select id="folds">
+
+                <option value="3">
+                    3-Fold
+                </option>
+
+                <option value="5" selected>
+                    5-Fold
+                </option>
+
+                <option value="10">
+                    10-Fold
+                </option>
+
+            </select>
+
+        </div>
+
+
+        <!-- Metric -->
+
+        <div>
+
+            <label>
+                Primary Evaluation Metric
+            </label>
+
+            <select id="metric">
+
+                <option value="accuracy">
+                    Accuracy
+                </option>
+
+                <option value="precision">
+                    Precision
+                </option>
+
+                <option value="recall">
+                    Recall
+                </option>
+
+                <option value="f1">
+                    F1-Score
+                </option>
+
+            </select>
+
+        </div>
+
+    </div>
+
+
+    <!-- Models -->
+
+    <h3>
+        Select Machine Learning Models
+    </h3>
+
+
+    <div class="models">
+
+
+        <label class="model-box">
+
+            <input
+                type="checkbox"
+                value="Logistic Regression"
+                checked
+            >
+
+            Logistic Regression
+
+        </label>
+
+
+        <label class="model-box">
+
+            <input
+                type="checkbox"
+                value="Decision Tree"
+                checked
+            >
+
+            Decision Tree
+
+        </label>
+
+
+        <label class="model-box">
+
+            <input
+                type="checkbox"
+                value="Random Forest"
+                checked
+            >
+
+            Random Forest
+
+        </label>
+
+
+        <label class="model-box">
+
+            <input
+                type="checkbox"
+                value="KNN"
+                checked
+            >
+
+            K-Nearest Neighbors
+
+        </label>
+
+
+        <label class="model-box">
+
+            <input
+                type="checkbox"
+                value="SVM"
+            >
+
+            Support Vector Machine
+
+        </label>
+
+
+    </div>
+
+
+    <button onclick="runEvaluation()">
+
+        Run Cross Validation
+
+    </button>
+
+
+</section>
+
+
+<!-- =====================================================
+     LOADING
+===================================================== -->
+
+<div id="loading">
+
+    <div class="loader"></div>
+
+    <p>
+        Running Cross Validation...
+    </p>
+
+</div>
+
+
+<!-- =====================================================
+     RESULTS
+===================================================== -->
+
+<section
+    id="results"
+    class="card hidden"
+>
+
+    <h2>
+        Cross Validation Results
+    </h2>
+
+
+    <div class="info-box">
+
+        <p>
+
+            <strong>
+                Dataset:
+            </strong>
+
+            <span id="resultDataset">
+            </span>
+
+        </p>
+
+
+        <p>
+
+            <strong>
+                Validation:
+            </strong>
+
+            <span id="resultFolds">
+            </span>
+
+        </p>
+
+
+        <p>
+
+            <strong>
+                Primary Metric:
+            </strong>
+
+            <span id="resultMetric">
+            </span>
+
+        </p>
+
+    </div>
+
+
+    <!-- Table -->
+
+    <div class="table-container">
+
+        <table>
+
+            <thead>
+
+                <tr>
+
+                    <th>
+                        Model
+                    </th>
+
+                    <th>
+                        Accuracy
+                    </th>
+
+                    <th>
+                        Precision
+                    </th>
+
+                    <th>
+                        Recall
+                    </th>
+
+                    <th>
+                        F1-Score
+                    </th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody id="resultsTable">
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+
+    <div
+        id="bestModelStatus"
+        class="status"
+    >
+
+    </div>
+
+</section>
+
+
+<!-- =====================================================
+     CHART
+===================================================== -->
+
+<section
+    id="chartSection"
+    class="card hidden"
+>
+
+    <h2>
+        Model Performance Comparison
+    </h2>
+
+
+    <div class="chart-container">
+
+        <canvas
+            id="comparisonChart"
+        ></canvas>
+
+    </div>
+
+</section>
+
+
+<!-- =====================================================
+     CROSS VALIDATION PROCESS
+===================================================== -->
+
+<section
+    id="processSection"
+    class="card"
+>
+
+    <h2>
+        How K-Fold Cross Validation Works
+    </h2>
+
+
+    <div class="steps">
+
+
+        <div class="step">
+
+            <div class="step-number">
+                1
+            </div>
+
+            <h3>
+                Split Dataset
+            </h3>
+
+            <p>
+
+                The complete dataset is
+                divided into K smaller
+                groups called folds.
+
+            </p>
+
+        </div>
+
+
+        <div class="step">
+
+            <div class="step-number">
+                2
+            </div>
+
+            <h3>
+                Train
+            </h3>
+
+            <p>
+
+                K-1 folds are used to
+                train the machine
+                learning model.
+
+            </p>
+
+        </div>
+
+
+        <div class="step">
+
+            <div class="step-number">
+                3
+            </div>
+
+            <h3>
+                Test
+            </h3>
+
+            <p>
+
+                The remaining fold is
+                used to test the model.
+
+            </p>
+
+        </div>
+
+
+        <div class="step">
+
+            <div class="step-number">
+                4
+            </div>
+
+            <h3>
+                Average
+            </h3>
+
+            <p>
+
+                The process is repeated
+                K times and the scores
+                are averaged.
+
+            </p>
+
+        </div>
+
+
+    </div>
+
+</section>
+
+
+<!-- =====================================================
+     METRICS
+===================================================== -->
+
+<section class="card">
+
+    <h2>
+        Performance Metrics
+    </h2>
+
+
+    <div class="metric-grid">
+
+
+        <div class="metric-card">
+
+            <h3>
+                Accuracy
+            </h3>
+
+            <p>
+
+                Percentage of predictions
+                that are correct.
+
+            </p>
+
+            <span class="formula">
+
+                Accuracy =
+                (TP + TN) /
+                (TP + TN + FP + FN)
+
+            </span>
+
+        </div>
+
+
+        <div class="metric-card">
+
+            <h3>
+                Precision
+            </h3>
+
+            <p>
+
+                Measures how many predicted
+                positive cases are actually
+                positive.
+
+            </p>
+
+            <span class="formula">
+
+                Precision =
+                TP / (TP + FP)
+
+            </span>
+
+        </div>
+
+
+        <div class="metric-card">
+
+            <h3>
+                Recall
+            </h3>
+
+            <p>
+
+                Measures how many actual
+                positive cases were
+                correctly identified.
+
+            </p>
+
+            <span class="formula">
+
+                Recall =
+                TP / (TP + FN)
+
+            </span>
+
+        </div>
+
+
+        <div class="metric-card">
+
+            <h3>
+                F1-Score
+            </h3>
+
+            <p>
+
+                Harmonic mean of precision
+                and recall.
+
+            </p>
+
+            <span class="formula">
+
+                F1 =
+                2 × Precision × Recall /
+                (Precision + Recall)
+
+            </span>
+
+        </div>
+
+
+    </div>
+
+</section>
+
+
+<!-- =====================================================
+     FOOTER
+===================================================== -->
+
+</main>
+
+
+<footer>
+
+    <p>
+
+        Cross Validation Based Model Evaluation
+
+    </p>
+
+    <p>
+
+        Machine Learning Project
+
+    </p>
+
+</footer>
+
+
+<!-- =====================================================
+     JAVASCRIPT
+===================================================== -->
+
+<script>
+
+
+/*
+=========================================================
+MODEL RESULTS
+=========================================================
+
+These are demonstration values for the frontend.
+
+For a real ML implementation, these values would be
+generated using Python + Scikit-Learn.
+=========================================================
+*/
+
+
+const modelResults = {
+
+    "Logistic Regression": {
+
+        accuracy: 0.96,
+
+        precision: 0.95,
+
+        recall: 0.96,
+
+        f1: 0.95
+
+    },
+
+
+    "Decision Tree": {
+
+        accuracy: 0.93,
+
+        precision: 0.92,
+
+        recall: 0.93,
+
+        f1: 0.92
+
+    },
+
+
+    "Random Forest": {
+
+        accuracy: 0.97,
+
+        precision: 0.97,
+
+        recall: 0.96,
+
+        f1: 0.97
+
+    },
+
+
+    "KNN": {
+
+        accuracy: 0.95,
+
+        precision: 0.94,
+
+        recall: 0.95,
+
+        f1: 0.94
+
+    },
+
+
+    "SVM": {
+
+        accuracy: 0.98,
+
+        precision: 0.98,
+
+        recall: 0.97,
+
+        f1: 0.98
+
+    }
+
+};
+
+
+/*
+=========================================================
+DATASET NAMES
+=========================================================
+*/
+
+
+const datasetNames = {
+
+    iris:
+        "Iris Dataset",
+
+    wine:
+        "Wine Dataset",
+
+    breast:
+        "Breast Cancer Dataset"
+
+};
+
+
+/*
+=========================================================
+CHART VARIABLE
+=========================================================
+*/
+
+
+let comparisonChart = null;
+
+
+/*
+=========================================================
+MAIN FUNCTION
+=========================================================
+*/
+
+
+function runEvaluation() {
+
+
+    /*
+    Get selected dataset
+    */
+
+    const dataset =
+        document.getElementById(
+            "dataset"
+        ).value;
+
+
+    /*
+    Get number of folds
+    */
+
+    const folds =
+        document.getElementById(
+            "folds"
+        ).value;
+
+
+    /*
+    Get primary metric
+    */
+
+    const metric =
+        document.getElementById(
+            "metric"
+        ).value;
+
+
+    /*
+    Get selected models
+    */
+
+    const selectedModels =
+        Array.from(
+
+            document.querySelectorAll(
+                '.model-box input:checked'
+            )
+
+        ).map(
+
+            checkbox =>
+                checkbox.value
+
+        );
+
+
+    /*
+    Check model selection
+    */
+
+    if (
+        selectedModels.length === 0
+    ) {
+
+        alert(
+            "Please select at least one model."
+        );
+
+        return;
+
+    }
+
+
+    /*
+    Show loading animation
+    */
+
+    document.getElementById(
+        "loading"
+    ).style.display = "block";
+
+
+    document.getElementById(
+        "results"
+    ).classList.add("hidden");
+
+
+    document.getElementById(
+        "chartSection"
+    ).classList.add("hidden");
+
+
+    /*
+    Simulate evaluation time
+    */
+
+    setTimeout(
+
+        function() {
+
+            displayResults(
+
+                dataset,
+
+                folds,
+
+                metric,
+
+                selectedModels
+
+            );
+
+        },
+
+        1200
+
+    );
+
+}
+
+
+/*
+=========================================================
+DISPLAY RESULTS
+=========================================================
+*/
+
+
+function displayResults(
+
+    dataset,
+
+    folds,
+
+    metric,
+
+    selectedModels
+
+) {
+
+
+    /*
+    Hide loading
+    */
+
+    document.getElementById(
+        "loading"
+    ).style.display = "none";
+
+
+    /*
+    Show result sections
+    */
+
+    document.getElementById(
+        "results"
+    ).classList.remove("hidden");
+
+
+    document.getElementById(
+        "chartSection"
+    ).classList.remove("hidden");
+
+
+    /*
+    Display dataset
+    */
+
+    document.getElementById(
+        "resultDataset"
+    ).textContent =
+        datasetNames[dataset];
+
+
+    /*
+    Display folds
+    */
+
+    document.getElementById(
+        "resultFolds"
+    ).textContent =
+        folds +
+        "-Fold Cross Validation";
+
+
+    /*
+    Display metric
+    */
+
+    document.getElementById(
+        "resultMetric"
+    ).textContent =
+        metric.toUpperCase();
+
+
+    /*
+    Find best model
+    */
+
+    let bestScore = -1;
+
+    let bestModel = "";
+
+
+    selectedModels.forEach(
+
+        function(model) {
+
+            const score =
+                modelResults[
+                    model
+                ][
+                    metric
+                ];
+
+
+            if (
+                score >
+                bestScore
+            ) {
+
+                bestScore =
+                    score;
+
+                bestModel =
+                    model;
+
+            }
+
+        }
+
+    );
+
+
+    /*
+    Create table
+    */
+
+    const table =
+        document.getElementById(
+            "resultsTable"
+        );
+
+
+    table.innerHTML = "";
+
+
+    selectedModels.forEach(
+
+        function(model) {
+
+
+            const result =
+                modelResults[
+                    model
+                ];
+
+
+            const row =
+                document.createElement(
+                    "tr"
+                );
+
+
+            /*
+            Highlight best model
+            */
+
+            if (
+                model === bestModel
+            ) {
+
+                row.classList.add(
+                    "best-model"
+                );
+
+            }
+
+
+            /*
+            Model name
+            */
+
+            let modelName =
+                model;
+
+
+            if (
+                model === bestModel
+            ) {
+
+                modelName +=
+                    ' <span class="best-badge">BEST</span>';
+
+            }
+
+
+            row.innerHTML = `
+
+                <td>
+                    ${modelName}
+                </td>
+
+                <td>
+                    ${formatScore(
+                        result.accuracy
+                    )}
+                </td>
+
+                <td>
+                    ${formatScore(
+                        result.precision
+                    )}
+                </td>
+
+                <td>
+                    ${formatScore(
+                        result.recall
+                    )}
+                </td>
+
+                <td>
+                    ${formatScore(
+                        result.f1
+                    )}
+                </td>
+
+            `;
+
+
+            table.appendChild(
+                row
+            );
+
+        }
+
+    );
+
+
+    /*
+    Display status
+    */
+
+    document.getElementById(
+        "bestModelStatus"
+    ).innerHTML = `
+
+        <strong>
+            Highest ${metric.toUpperCase()} in this demonstration:
+        </strong>
+
+        ${bestModel}
+
+        (${formatScore(bestScore)})
+
+    `;
+
+
+    /*
+    Create chart
+    */
+
+    createChart(
+
+        selectedModels,
+
+        metric
+
+    );
+
+}
+
+
+/*
+=========================================================
+FORMAT SCORE
+=========================================================
+*/
+
+
+function formatScore(score) {
+
+    return (
+        score * 100
+    ).toFixed(2)
+    + "%";
+
+}
+
+
+/*
+=========================================================
+CREATE CHART
+=========================================================
+*/
+
+
+function createChart(
+
+    selectedModels,
+
+    metric
+
+) {
+
+
+    /*
+    Get canvas
+    */
+
+    const ctx =
+        document.getElementById(
+            "comparisonChart"
+        ).getContext(
+            "2d"
+        );
+
+
+    /*
+    Destroy previous chart
+    */
+
+    if (
+        comparisonChart !== null
+    ) {
+
+        comparisonChart.destroy();
+
+    }
+
+
+    /*
+    Generate scores
+    */
+
+    const scores =
+        selectedModels.map(
+
+            function(model) {
+
+                return (
+                    modelResults[
+                        model
+                    ][
+                        metric
+                    ] * 100
+                );
+
+            }
+
+        );
+
+
+    /*
+    Create chart
+    */
+
+    comparisonChart =
+        new Chart(
+
+            ctx,
+
+            {
+
+                type: "bar",
+
+
+                data: {
+
+                    labels:
+                        selectedModels,
+
+
+                    datasets: [
+
+                        {
+
+                            label:
+                                metric.toUpperCase()
+                                +
+                                " Score (%)",
+
+
+                            data:
+                                scores,
+
+
+                            borderWidth:
+                                1
+
+                        }
+
+                    ]
+
+                },
+
+
+                options: {
+
+                    responsive: true,
+
+                    maintainAspectRatio:
+                        false,
+
+
+                    scales: {
+
+                        y: {
+
+                            beginAtZero:
+                                false,
+
+                            min: 70,
+
+                            max: 100,
+
+                            title: {
+
+                                display:
+                                    true,
+
+                                text:
+                                    "Performance (%)"
+
+                            }
+
+                        }
+
+                    },
+
+
+                    plugins: {
+
+                        legend: {
+
+                            display:
+                                true
+
+                        },
+
+
+                        tooltip: {
+
+                            callbacks: {
+
+                                label:
+                                    function(
+                                        context
+                                    ) {
+
+                                        return (
+                                            context.raw
+                                        ).toFixed(
+                                            2
+                                        )
+                                        + "%";
+
+                                    }
+
+                            }
+
+                        }
+
+                    }
+
+                }
+
+            }
+
+        );
+
+}
+
+
+</script>
+
+
+</body>
+
+</html>
